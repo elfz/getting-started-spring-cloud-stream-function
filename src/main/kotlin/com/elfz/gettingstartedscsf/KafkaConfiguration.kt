@@ -2,26 +2,40 @@ package com.elfz.gettingstartedscsf
 
 import mu.KLogger
 import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.cloud.stream.function.StreamBridge
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.integration.support.MessageBuilder
+import org.springframework.kafka.support.KafkaHeaders
 import reactor.core.publisher.Flux
-import java.time.Duration
 import java.util.function.Consumer
 import java.util.function.Function
-import java.util.function.Supplier
-import java.util.logging.Level.INFO
-import kotlin.random.Random
 
 @Configuration
 class KafkaConfiguration(
-    private val log: KLogger = KotlinLogging.logger {}
+    private val bridge: StreamBridge,
+
 ) {
 
-    @Bean
-    fun fizzBuzzProducer(): Supplier<Flux<Int>> = Supplier {
-        Flux.interval(Duration.ofSeconds(5))
-            .map { Random.nextInt(10000 - 1) + 1 }
-            .log("m=fizzBuzzProducer")
+    private val log: KLogger = KotlinLogging.logger {}
+
+    // @Bean
+    // fun fizzBuzzProducer(): Supplier<Flux<Int>> = Supplier {
+    //     Flux.interval(Duration.ofSeconds(5))
+    //         .map { Random.nextInt(10000 - 1) + 1 }
+    //         .log("m=fizzBuzzProducer")
+    // }
+
+    fun send(value: Int){
+        try{
+            val message = MessageBuilder.withPayload(value)
+                .build()
+            bridge.send("fizzBuzzProducer-out-0", message)
+        } catch (ex: Exception) {
+            throw Exception("Failed to send event: ${ex.message}", ex)
+        }
+
     }
 
     @Bean
